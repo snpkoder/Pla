@@ -1,0 +1,21 @@
+{
+    "name": "Sistema POA",
+    "image": "mcr.microsoft.com/devcontainers/javascript-node:18",
+    "features": {
+        "ghcr.io/devcontainers/features/node:1": {}
+    },
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "ms-vscode.live-server"
+            ]
+        }
+    },
+    "postCreateCommand": "npm install -g live-server",
+    "portsAttributes": {
+        "5500": {
+            "label": "Live Server",
+            "onAutoForward": "notify"
+        }
+    }
+}
