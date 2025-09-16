@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Sistema POA Presupuesto - SENAPE</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+            color: #1f2937;
+        }
+        .content-section {
+            display: none;
+        }
+        .content-section.active {
+            display: block;
+        }
+        .nav-link.active {
+            color: white;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col">
+
+    <!-- Login Modal -->
+    <div id="login-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl shadow-2xl p-8 w-full max-w-sm transform transition-transform duration-300 scale-100">
+            <h2 class="text-2xl font-bold text-center mb-6 text-gray-800">Acceso al Sistema POA</h2>
+            <form id="login-form">
+                <div class="mb-4">
+                    <label for="username" class="block text-gray-700 font-medium mb-2">Usuario</label>
+                    <input type="text" id="username" name="username" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Ingrese su usuario">
+                </div>
+                <div class="mb-6">
+                    <label for="password" class="block text-gray-700 font-medium mb-2">Contraseña</label>
+                    <input type="password" id="password" name="password" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Ingrese su contraseña">
+                </div>
+                <button type="submit" class="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors duration-200">
+                    Ingresar
+                </button>
+            </form>
+            <div id="login-error-message" class="text-red-500 text-center mt-4 hidden"></div>
+        </div>
+    </div>
+
+    <!-- Main Application Container -->
+    <div id="app-container" class="hidden flex-1 flex flex-col">
+        <!-- Header -->
+        <header class="bg-blue-800 text-white p-4 shadow-lg rounded-b-xl">
+            <div class="container mx-auto flex justify-between items-center">
+                <div class="text-2xl font-extrabold tracking-tight">
+                    Sistema POA Presupuesto
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div id="user-info" class="text-sm font-semibold text-blue-200"></div>
+                    <button id="logout-button" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-full shadow-md transition-colors duration-200">
+                        Salir
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Navigation -->
+        <nav class="bg-gray-800 shadow-md">
+            <div class="container mx-auto py-2 px-4 flex justify-between items-center text-sm">
+                <div class="flex space-x-6 text-gray-300">
+                    <a href="#dashboard" class="nav-link hover:text-white transition-colors duration-200 active">Dashboard</a>
+                    <a href="#planning" class="nav-link hover:text-white transition-colors duration-200">Planificación</a>
+                    <a href="#budget" class="nav-link hover:text-white transition-colors duration-200">Presupuesto</a>
+                    <a href="#reports" class="nav-link hover:text-white transition-colors duration-200">Reportes</a>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content Wrapper -->
+        <main class="flex-1 container mx-auto p-6">
+            
+            <!-- Dashboard Section -->
+            <div id="dashboard-section" class="content-section active">
+                <h1 class="text-3xl font-bold mb-6 text-gray-900">Dashboard de Dirección / Unidad</h1>
+                
+                <!-- Cards de Métricas -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                    <div class="bg-white p-6 rounded-xl shadow-lg border-l-4 border-green-500">
+                        <h2 class="text-xl font-semibold mb-2 text-gray-700">Ejecución del POA</h2>
+                        <p class="text-4xl font-bold text-green-600">85%</p>
+                        <p class="text-sm text-gray-500 mt-2">Avance físico acumulado</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-lg border-l-4 border-blue-500">
+                        <h2 class="text-xl font-semibold mb-2 text-gray-700">Presupuesto Ejecutado</h2>
+                        <p class="text-4xl font-bold text-blue-600">$150,000</p>
+                        <p class="text-sm text-gray-500 mt-2">De un total de $200,000</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-lg border-l-4 border-yellow-500">
+                        <h2 class="text-xl font-semibold mb-2 text-gray-700">Metas Clave</h2>
+                        <p class="text-4xl font-bold text-yellow-600">3</p>
+                        <p class="text-sm text-gray-500 mt-2">Metas en estado crítico</p>
+                    </div>
+                </div>
+
+                <!-- Tabla de Actividades del POA -->
+                <div class="bg-white p-6 rounded-xl shadow-lg">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-2xl font-semibold text-gray-800">Mis Actividades POA</h2>
+                        <button id="new-task-btn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-full shadow-md transition-colors duration-200">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-1" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" />
+                            </svg>
+                            Nueva Tarea
+                        </button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full leading-normal">
+                            <thead>
+                                <tr class="bg-gray-200 text-gray-600 uppercase text-xs font-semibold">
+                                    <th class="py-3 px-6 text-left">Código Tarea</th>
+                                    <th class="py-3 px-6 text-left">Operación</th>
+                                    <th class="py-3 px-6 text-left">Tarea</th>
+                                    <th class="py-3 px-6 text-left">Meta</th>
+                                    <th class="py-3 px-6 text-left">Responsable</th>
+                                    <th class="py-3 px-6 text-left">Meses</th>
+                                    <th class="py-3 px-6 text-left">Ejecución POA</th>
+                                    <th class="py-3 px-6 text-left">Ejecución Presupuesto</th>
+                                    <th class="py-3 px-6 text-center">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody class="text-gray-700">
+                                <tr>
+                                    <td class="py-3 px-6 border-b border-gray-200">1.1.1</td>
+                                    <td class="py-3 px-6 border-b border-gray-200">Ordenar y clasificar la documentación resguardada en el Archivo de la Dirección de Registro y Promoción.</td>
+                                    <td class="py-3 px-6 border-b border-gray-200">Organización de la Documentación inherente a la DEJURBE, hasta la gestión 2024.</td>
+                                    <td class="py-3 px-6 border-b border-gray-200">Organización del fondo documental gestión 2024, realizado.</td>
+                                    <td class="py-3 px-6 border-b border-gray-200">UC</td>
+                                    <td class="py-3 px-6 border-b border-gray-200">ENE - DIC</td>
+                                    <td class="py-3 px-6 border-b border-gray-200">
+                                        <span class="text-sm font-semibold text-green-600">85%</span>
+                                        <div class="w-full bg-gray-200 rounded-full h-2.5 mt-1">
+                                            <div class="bg-green-500 h-2.5 rounded-full" style="width: 85%"></div>
+                                        </div>
+                                    </td>
+                                    <td class="py-3 px-6 border-b border-gray-200">
+                                        <span class="text-sm font-semibold text-blue-600">50%</span>
+                                        <div class="w-full bg-gray-200 rounded-full h-2.5 mt-1">
+                                            <div class="bg-blue-500 h-2.5 rounded-full" style="width: 50%"></div>
+                                        </div>
+                                    </td>
+                                    <td class="py-3 px-6 border-b border-gray-200 text-center">
+                                        <button class="text-blue-500 hover:text-blue-700 text-xs font-bold">Editar</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="py-3 px-6 border-b border-gray-200">2.1.1</td>
+                                    <td class="py-3 px-6 border-b border-gray-200">Mejorar la capacidad de gestión de bienes y activos exigibles.</td>
+                                    <td class="py-3 px-6 border-b border-gray-200">Plan de capacitación en normativas de gestión.</td>
+                                    <td class="py-3 px-6 border-b border-gray-200">120 funcionarios capacitados en la gestión 2024.</td>
+                                    <td class="py-3 px-6 border-b border-gray-200">DAF</td>
+                                    <td class="py-3 px-6 border-b border-gray-200">MAR - JUN</td>
+                                    <td class="py-3 px-6 border-b border-gray-200">
+                                        <span class="text-sm font-semibold text-yellow-600">40%</span>
+                                        <div class="w-full bg-gray-200 rounded-full h-2.5 mt-1">
+                                            <div class="bg-yellow-500 h-2.5 rounded-full" style="width: 40%"></div>
+                                        </div>
+                                    </td>
+                                    <td class="py-3 px-6 border-b border-gray-200">
+                                        <span class="text-sm font-semibold text-red-600">25%</span>
+                                        <div class="w-full bg-gray-200 rounded-full h-2.5 mt-1">
+                                            <div class="bg-red-500 h-2.5 rounded-full" style="width: 25%"></div>
+                                        </div>
+                                    </td>
+                                    <td class="py-3 px-6 border-b border-gray-200 text-center">
+                                        <button class="text-blue-500 hover:text-blue-700 text-xs font-bold">Editar</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Planning Section -->
+            <div id="planning-section" class="content-section">
+                <h1 class="text-3xl font-bold mb-6 text-gray-900">Formulario de Planificación</h1>
+                <div class="bg-white p-8 rounded-xl shadow-lg">
+                    <form id="planning-form">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                            <div>
+                                <label for="task-code" class="block text-gray-700 font-medium mb-2">Código Tarea</label>
+                                <input type="text" id="task-code" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Ej: 1.1.1">
+                            </div>
+                            <div>
+                                <label for="operation" class="block text-gray-700 font-medium mb-2">Operación (Objetivo Específico)</label>
+                                <input type="text" id="operation" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Describa la operación">
+                            </div>
+                            <div>
+                                <label for="task" class="block text-gray-700 font-medium mb-2">Tarea</label>
+                                <input type="text" id="task" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Describa la tarea">
+                            </div>
+                            <div>
+                                <label for="goal" class="block text-gray-700 font-medium mb-2">Meta</label>
+                                <input type="text" id="goal" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Defina la meta">
+                            </div>
+                            <div>
+                                <label for="responsible" class="block text-gray-700 font-medium mb-2">Responsable Org</label>
+                                <select id="responsible" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <option value="">Seleccione una Unidad</option>
+                                    <option value="DRP">Dirección de Registro y Promoción</option>
+                                    <option value="DBRAE">Dirección de Disposición de Bienes y Recuperación de Activos Exigibles</option>
+                                    <option value="DLEGSS">Dirección de Liquidación de ex Entes Gestores de la Seguridad Social</option>
+                                    <option value="DAF">Dirección Administrativa y Financiera</option>
+                                    <option value="DJ">Dirección Jurídica</option>
+                                    <option value="UAI">Unidad de Auditoría Interna</option>
+                                    <option value="TRA">Área de Transparencia</option>
+                                    <option value="DOR">Oficina Distrital Oruro</option>
+                                    <option value="DCO">Oficina Distrital Cochabamba</option>
+                                    <option value="DSC">Oficina Distrital Santa Cruz</option>
+                                    <option value="DCH">Oficina Distrital Chuquisaca</option>
+                                    <option value="DBE">Oficina Distrital Beni</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="start-month" class="block text-gray-700 font-medium mb-2">Mes de Inicio</label>
+                                <input type="month" id="start-month" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label for="end-month" class="block text-gray-700 font-medium mb-2">Mes de Fin</label>
+                                <input type="month" id="end-month" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label for="weight-operation" class="block text-gray-700 font-medium mb-2">Ponderación Operación (%)</label>
+                                <input type="number" id="weight-operation" min="0" max="100" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label for="weight-task" class="block text-gray-700 font-medium mb-2">Ponderación Tarea (%)</label>
+                                <input type="number" id="weight-task" min="0" max="100" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                        </div>
+                        <button type="submit" class="w-full bg-green-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-700 transition-colors duration-200 mt-4">
+                            Guardar Tarea
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Budget Section -->
+            <div id="budget-section" class="content-section">
+                <h1 class="text-3xl font-bold mb-6 text-gray-900">Gestión de Presupuesto</h1>
+                <div class="bg-white p-8 rounded-xl shadow-lg">
+                    <form id="budget-form">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                            <div>
+                                <label for="available-budget" class="block text-gray-700 font-medium mb-2">Presupuesto Disponible ($)</label>
+                                <input type="number" id="available-budget" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Monto total">
+                            </div>
+                            <div>
+                                <label for="executed-budget" class="block text-gray-700 font-medium mb-2">Presupuesto Ejecutado ($)</label>
+                                <input type="number" id="executed-budget" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Monto ejecutado">
+                            </div>
+                            <div>
+                                <label for="budget-area" class="block text-gray-700 font-medium mb-2">Área Responsable</label>
+                                <select id="budget-area" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <option value="">Seleccione una Área</option>
+                                    <option value="DAF">Dirección Administrativa y Financiera</option>
+                                    <option value="DLEGSS">Dirección de Liquidación de ex Entes Gestores de la Seguridad Social</option>
+                                    <option value="DBE">Oficina Distrital Beni</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="budget-execution" class="block text-gray-700 font-medium mb-2">Ejecución del Presupuesto (%)</label>
+                                <input type="number" id="budget-execution" min="0" max="100" class="w-full p-3 border border-gray-300 rounded-lg bg-gray-100 cursor-not-allowed" readonly>
+                            </div>
+                        </div>
+                        <button type="submit" class="w-full bg-green-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-700 transition-colors duration-200 mt-4">
+                            Guardar Presupuesto
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Reports Section -->
+            <div id="reports-section" class="content-section">
+                <h1 class="text-3xl font-bold mb-6 text-gray-900">Reportes y Visualizaciones</h1>
+                <div class="bg-white p-8 rounded-xl shadow-lg mb-8">
+                    <h2 class="text-xl font-semibold mb-4 text-gray-800">Ejecución del POA por Unidad</h2>
+                    <canvas id="poa-execution-chart"></canvas>
+                </div>
+                <div class="bg-white p-8 rounded-xl shadow-lg">
+                    <h2 class="text-xl font-semibold mb-4 text-gray-800">Ejecución Presupuestaria Trimestral</h2>
+                    <canvas id="budget-execution-chart"></canvas>
+                </div>
+            </div>
+
+        </main>
+
+        <!-- Footer -->
+        <footer class="bg-gray-800 text-white p-4 text-center mt-auto rounded-t-xl">
+            <p>&copy; 2024 SENAPE - Todos los derechos reservados.</p>
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const loginModal = document.getElementById('login-modal');
+            const loginForm = document.getElementById('login-form');
+            const appContainer = document.getElementById('app-container');
+            const logoutButton = document.getElementById('logout-button');
+            const userInfo = document.getElementById('user-info');
+            const loginErrorMessage = document.getElementById('login-error-message');
+            const navLinks = document.querySelectorAll('.nav-link');
+            const contentSections = document.querySelectorAll('.content-section');
+            const newTastBtn = document.getElementById('new-task-btn');
+            const budgetForm = document.getElementById('budget-form');
+            const availableBudgetInput = document.getElementById('available-budget');
+            const executedBudgetInput = document.getElementById('executed-budget');
+            const budgetExecutionInput = document.getElementById('budget-execution');
+
+            const users = {
+                'DRP': 'pass123', 'DAF': 'pass123', 'DLEGSS': 'pass123', 'DJ': 'pass123',
+                'UAI': 'pass123', 'TRA': 'pass123', 'DOR': 'pass123', 'DCO': 'pass123',
+                'DSC': 'pass123', 'DCH': 'pass123', 'DBE': 'pass123',
+            };
+
+            const userNames = {
+                'DRP': 'Dirección de Registro y Promoción', 'DAF': 'Dirección Administrativa y Financiera',
+                'DLEGSS': 'Dirección de Liquidación de Entes Gestores de la Seguridad Social',
+                'DJ': 'Dirección Jurídica', 'UAI': 'Unidad de Auditoría Interna', 'TRA': 'Área de Transparencia',
+                'DOR': 'Oficina Distrital Oruro', 'DCO': 'Oficina Distrital Cochabamba',
+                'DSC': 'Oficina Distrital Santa Cruz', 'DCH': 'Oficina Distrital Chuquisaca',
+                'DBE': 'Oficina Distrital Beni',
+            };
+            
+            // Función para cambiar de sección
+            const showSection = (sectionId) => {
+                contentSections.forEach(section => section.classList.remove('active'));
+                navLinks.forEach(link => link.classList.remove('active'));
+                
+                const activeLink = document.querySelector(`a[href="#${sectionId}"]`);
+                const activeSection = document.getElementById(`${sectionId}-section`);
+                
+                if (activeSection) {
+                    activeSection.classList.add('active');
+                }
+                if (activeLink) {
+                    activeLink.classList.add('active');
+                }
+
+                // Si es la sección de reportes, renderizar los gráficos
+                if (sectionId === 'reports') {
+                    renderCharts();
+                }
+            };
+
+            // Manejo de la navegación
+            navLinks.forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const sectionId = e.target.getAttribute('href').substring(1);
+                    showSection(sectionId);
+                });
+            });
+
+            // Manejo del botón "Nueva Tarea" en el dashboard
+            newTastBtn.addEventListener('click', () => {
+                showSection('planning');
+            });
+
+            // Manejo del Login
+            loginForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const username = document.getElementById('username').value.toUpperCase();
+                const password = document.getElementById('password').value;
+
+                if (users[username] && users[username] === password) {
+                    loginModal.classList.add('hidden');
+                    appContainer.classList.remove('hidden');
+                    const fullName = userNames[username] || username;
+                    userInfo.textContent = `Bienvenido, ${fullName}`;
+                    showSection('dashboard');
+                } else {
+                    loginErrorMessage.textContent = "Usuario o contraseña incorrectos. Por favor, intente de nuevo.";
+                    loginErrorMessage.classList.remove('hidden');
+                }
+            });
+
+            // Manejo del Logout
+            logoutButton.addEventListener('click', () => {
+                appContainer.classList.add('hidden');
+                loginModal.classList.remove('hidden');
+                loginForm.reset();
+                loginErrorMessage.classList.add('hidden');
+            });
+            
+            // Cálculo automático de ejecución presupuestaria
+            const calculateBudgetExecution = () => {
+                const available = parseFloat(availableBudgetInput.value) || 0;
+                const executed = parseFloat(executedBudgetInput.value) || 0;
+                if (available > 0) {
+                    const execution = (executed / available) * 100;
+                    budgetExecutionInput.value = execution.toFixed(2);
+                } else {
+                    budgetExecutionInput.value = '0.00';
+                }
+            };
+            availableBudgetInput.addEventListener('input', calculateBudgetExecution);
+            executedBudgetInput.addEventListener('input', calculateBudgetExecution);
+
+            // Funciones para renderizar los gráficos
+            const renderCharts = () => {
+                // Gráfico de Ejecución del POA
+                const poaCtx = document.getElementById('poa-execution-chart').getContext('2d');
+                new Chart(poaCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['DRP', 'DBRAE', 'DLEGSS', 'DAF', 'DJ', 'UAI', 'TRA'],
+                        datasets: [{
+                            label: 'Ejecución POA (%)',
+                            data: [85, 60, 95, 75, 80, 90, 70],
+                            backgroundColor: 'rgba(59, 130, 246, 0.8)', // Blue-500
+                            borderColor: 'rgba(59, 130, 246, 1)',
+                            borderWidth: 1,
+                            borderRadius: 6
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 100
+                            }
+                        }
+                    }
+                });
+
+                // Gráfico de Ejecución Presupuestaria Trimestral
+                const budgetCtx = document.getElementById('budget-execution-chart').getContext('2d');
+                new Chart(budgetCtx, {
+                    type: 'line',
+                    data: {
+                        labels: ['Q1', 'Q2', 'Q3', 'Q4'],
+                        datasets: [{
+                            label: 'Ejecución Presupuesto (%)',
+                            data: [22, 55, 78, 92],
+                            fill: false,
+                            borderColor: 'rgb(255, 159, 64)',
+                            tension: 0.1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 100
+                            }
+                        }
+                    }
+                });
+            };
+        });
+    </script>
+</body>
+</html>
